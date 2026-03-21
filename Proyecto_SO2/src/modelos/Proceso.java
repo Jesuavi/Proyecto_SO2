@@ -8,6 +8,9 @@ public class Proceso {
     private Archivo archivoObjetivo; // El archivo con el que vamos a trabajar
     private int bloquesRequeridos;   // Cuánto espacio necesita (solo útil al CREAR)
     private String estado;           // "NUEVO", "LISTO", "EJECUTANDO", "BLOQUEADO", "TERMINADO"
+    private int posicion; // El bloque del disco al que quiere ir este proceso
+    public int getPosicion() { return posicion; }
+    public void setPosicion(int posicion) { this.posicion = posicion; }
 
     // Constructor: Así nace un ticket de pedido
     public Proceso(String tipoOperacion, Archivo archivoObjetivo, int bloquesRequeridos) {

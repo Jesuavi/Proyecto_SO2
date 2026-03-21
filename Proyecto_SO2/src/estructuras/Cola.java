@@ -51,4 +51,6 @@ public class Cola<T> {
     public T verFrente() {
         return estaVacia() ? null : frente.getDato();
     }
+    // Para poder ver quién es el primero de la fila desde afuera
+    public Nodo<T> getFrente() { return frente; }
 }
