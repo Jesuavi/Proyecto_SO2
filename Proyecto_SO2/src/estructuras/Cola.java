@@ -20,7 +20,7 @@ public class Cola<T> {
     }
 
     // Método para Encolar (Hacer la fila)
-    public void encolar(T dato) {
+    public synchronized void encolar(T dato) {
         Nodo<T> nuevoNodo = new Nodo<>(dato);
         if (estaVacia()) {
             frente = nuevoNodo;
@@ -33,7 +33,7 @@ public class Cola<T> {
     }
 
     // Método para Desencolar (Atender al primero y sacarlo de la fila)
-    public T desencolar() {
+    public synchronized T desencolar() {
         if (estaVacia()) {
             return null;
         }

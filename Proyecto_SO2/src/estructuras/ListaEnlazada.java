@@ -99,4 +99,8 @@ public class ListaEnlazada<T> {
     }
     // Para poder recorrer el tren desde afuera
     public Nodo<T> getCabeza() { return cabeza; }
+    public void eliminarTodos() {
+    this.cabeza = null;
+    this.tamaño = 0;
+}
 }

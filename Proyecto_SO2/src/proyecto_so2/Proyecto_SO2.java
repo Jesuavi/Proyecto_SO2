@@ -1,20 +1,18 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
 package proyecto_so2;
 
+import vistas.VentanaPrincipal; // Importamos tu ventana que está en la carpeta 'vistas'
+
 /**
- *
  * @author Admin
  */
 public class Proyecto_SO2 {
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
-        // TODO code application logic here
+        // 1. Creamos un objeto de tu ventana
+        VentanaPrincipal miVentana = new VentanaPrincipal();
+        
+        // 2. La hacemos visible en la pantalla
+        miVentana.setVisible(true);
     }
     
 }

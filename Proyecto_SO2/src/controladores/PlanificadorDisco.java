@@ -1,58 +1,131 @@
-package controladores; // Asegúrate de que este sea el nombre correcto de tu carpeta
+package controladores; 
 
-import estructuras.ListaEnlazada; // Importamos tu estructura
+import estructuras.ListaEnlazada; 
 
-
-public class PlanificadorDisco extends Thread {
+public class PlanificadorDisco { // OJO: Ya no dice "extends Thread"
 
     // --- 1. VARIABLES DEL PLANIFICADOR ---
     private String politicaActual = "FIFO";
     private int posicionCabezal = 0;
     
-    // Tus variables originales de la captura
     private ListaEnlazada<Integer> colaDeSolicitudes; 
-    private boolean moviendoHaciaArriba = true;       
-    private boolean sistemaEncendido = true;          
+    private boolean moviendoHaciaArriba = true;        
 
     // --- CONSTRUCTOR ---
     public PlanificadorDisco() {
-        // Inicializamos la lista para que no dé errores de "NullPointer"
         this.colaDeSolicitudes = new ListaEnlazada<>();
     }
 
-    // --- 2. MÉTODOS GET Y SET (Para hablar con el Controlador) ---
-    public void setPosicionCabezal(int nuevaPosicion) {
-        this.posicionCabezal = nuevaPosicion;
+    // --- 2. MÉTODOS GET Y SET ---
+    public void setPosicionCabezal(int nuevaPosicion) { this.posicionCabezal = nuevaPosicion; }
+    public int getPosicionCabezal() { return this.posicionCabezal; }
+    public void setPolitica(String nuevaPolitica) { this.politicaActual = nuevaPolitica; }
+    
+    public void agregarSolicitud(int bloqueDestino) {
+        this.colaDeSolicitudes.agregarAlFinal(bloqueDestino);
     }
 
-    public int getPosicionCabezal() {
-        return this.posicionCabezal;
+    // Método vital para que no se acumulen bloques de la simulación anterior
+    public void limpiarCola() {
+        this.colaDeSolicitudes = new ListaEnlazada<>();
     }
 
-    public void setPolitica(String nuevaPolitica) {
-        this.politicaActual = nuevaPolitica;
-    }
+    // --- 3. EL NUEVO MOTOR (PASO A PASO) ---
+    // En lugar de hacer todo de golpe, este método resuelve 1 solo bloque cada vez que la tabla se lo pide
+    public int procesarSiguiente() {
+        if (colaDeSolicitudes.estaVacia()) {
+            return posicionCabezal;
+        }
 
-    // --- 3. MOTOR DEL PLANIFICADOR (HILO EN SEGUNDO PLANO) ---
-    // Como pusiste "extends Thread", Java te obliga a tener este método run()
-    @Override
-    public void run() {
-        System.out.println("🚀 Motor del Planificador iniciado y esperando órdenes...");
-        
-        while (sistemaEncendido) {
-            // Más adelante aquí pondremos la magia matemática de FIFO, SSTF y SCAN
-            
-            try {
-                // Hacemos que el hilo duerma 1 segundo para que no consuma toda la RAM de tu PC
-                Thread.sleep(1000); 
-            } catch (InterruptedException e) {
-                System.out.println("❌ Error en el motor del planificador: " + e.getMessage());
+        int tamaño = colaDeSolicitudes.getTamaño();
+        int siguienteDestino = -1;
+        int indiceAEliminar = -1;
+
+        switch (politicaActual) {
+            case "FIFO" -> {
+                siguienteDestino = colaDeSolicitudes.obtener(0);
+                indiceAEliminar = 0;
+            }
+
+            case "SSTF" -> {
+                int minDistancia = Integer.MAX_VALUE;
+                for (int i = 0; i < tamaño; i++) {
+                    int destinoCandidato = colaDeSolicitudes.obtener(i);
+                    int distancia = Math.abs(destinoCandidato - posicionCabezal);
+                    if (distancia < minDistancia) {
+                        minDistancia = distancia;
+                        siguienteDestino = destinoCandidato;
+                        indiceAEliminar = i;
+                    }
+                }
+            }
+
+            case "SCAN" -> {
+                int minDistanciaScan = Integer.MAX_VALUE;
+                for (int i = 0; i < tamaño; i++) {
+                    int pos = colaDeSolicitudes.obtener(i);
+                    if (moviendoHaciaArriba && pos >= posicionCabezal) {
+                        int dist = pos - posicionCabezal;
+                        if (dist < minDistanciaScan) {
+                            minDistanciaScan = dist; siguienteDestino = pos; indiceAEliminar = i;
+                        }
+                    } else if (!moviendoHaciaArriba && pos <= posicionCabezal) {
+                        int dist = posicionCabezal - pos;
+                        if (dist < minDistanciaScan) {
+                            minDistanciaScan = dist; siguienteDestino = pos; indiceAEliminar = i;
+                        }
+                    }
+                }
+                
+                // Si no hay más bloques en esta dirección, cambia de sentido y vuelve a buscar
+                if (siguienteDestino == -1) {
+                    moviendoHaciaArriba = !moviendoHaciaArriba;
+                    return procesarSiguiente(); 
+                }
+            }
+
+            case "C-SCAN" -> {
+                int minDistanciaCscan = Integer.MAX_VALUE;
+                for (int i = 0; i < tamaño; i++) {
+                    int pos = colaDeSolicitudes.obtener(i);
+                    if (pos >= posicionCabezal) {
+                        int dist = pos - posicionCabezal;
+                        if (dist < minDistanciaCscan) {
+                            minDistanciaCscan = dist; siguienteDestino = pos; indiceAEliminar = i;
+                        }
+                    }
+                }
+                // Si llegó al final, vuelve al inicio (0) y busca el más cercano
+                if (siguienteDestino == -1) {
+                    int minPosicion = Integer.MAX_VALUE;
+                    for (int i = 0; i < tamaño; i++) {
+                        int pos = colaDeSolicitudes.obtener(i);
+                        if (pos < minPosicion) {
+                            minPosicion = pos; siguienteDestino = pos; indiceAEliminar = i;
+                        }
+                    }
+                }
             }
         }
+
+        // Actualizar el cabezal y borrar la solicitud atendida
+        if (siguienteDestino != -1 && indiceAEliminar != -1) {
+            colaDeSolicitudes.eliminarEnIndice(indiceAEliminar);
+            posicionCabezal = siguienteDestino;
+        }
+
+        return posicionCabezal;
     }
-    
-    // Método de seguridad para apagar el motor si cerramos el programa
-    public void apagarMotor() {
-        this.sistemaEncendido = false;
-    }
+    public estructuras.ListaEnlazada<Integer> getColaSolicitudes() {
+    return this.colaDeSolicitudes;
+}
+    // Método para establecer la dirección
+public void setDireccion(boolean haciaArriba) {
+    this.moviendoHaciaArriba = haciaArriba;
+}
+
+// Método para obtener la dirección actual
+public boolean isMoviendoHaciaArriba() {
+    return moviendoHaciaArriba;
+}
 }

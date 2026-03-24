@@ -1,45 +1,56 @@
 package modelos;
 
 public class Proceso {
-    private static int contadorGlobal = 1; // Para que cada proceso tenga un número único automáticamente
+    private static int contadorGlobal = 1;
     
     private int id;
-    private String tipoOperacion; // Puede ser: "CREAR", "LEER", "ACTUALIZAR", "ELIMINAR"
-    private Archivo archivoObjetivo; // El archivo con el que vamos a trabajar
-    private int bloquesRequeridos;   // Cuánto espacio necesita (solo útil al CREAR)
-    private String estado;           // "NUEVO", "LISTO", "EJECUTANDO", "BLOQUEADO", "TERMINADO"
-    private int posicion; // El bloque del disco al que quiere ir este proceso
-    public int getPosicion() { return posicion; }
-    public void setPosicion(int posicion) { this.posicion = posicion; }
+    private String tipoOperacion; // CREAR, LEER, ACTUALIZAR, ELIMINAR
+    private Archivo archivoObjetivo;
+    private int bloquesRequeridos;
+    private String estado; // NUEVO, LISTO, EJECUTANDO, BLOQUEADO, TERMINADO
+    private int posicion;
+    private String dueño; // Administrador o Usuario
+    private long tiempoCreacion;
+    private long tiempoEjecucion;
 
-    // Constructor: Así nace un ticket de pedido
     public Proceso(String tipoOperacion, Archivo archivoObjetivo, int bloquesRequeridos) {
-        this.id = contadorGlobal++; // Le asignamos un ID y sumamos 1 para el siguiente
+        this.id = contadorGlobal++;
         this.tipoOperacion = tipoOperacion;
         this.archivoObjetivo = archivoObjetivo;
         this.bloquesRequeridos = bloquesRequeridos;
-        this.estado = "NUEVO"; // Todo proceso nace en estado NUEVO
+        this.estado = "NUEVO";
+        this.posicion = 0;
+        this.dueño = Sesion.usuarioActual;
+        this.tiempoCreacion = System.currentTimeMillis();
+        this.tiempoEjecucion = 0;
     }
 
-    // --- HERRAMIENTAS (Getters y Setters) ---
+    // Getters y Setters
     public int getId() { return id; }
-    
     public String getTipoOperacion() { return tipoOperacion; }
-    
     public Archivo getArchivoObjetivo() { return archivoObjetivo; }
-    
     public int getBloquesRequeridos() { return bloquesRequeridos; }
-    
     public String getEstado() { return estado; }
+    public void setEstado(String nuevoEstado) { this.estado = nuevoEstado; }
+    public int getPosicion() { return posicion; }
+    public void setPosicion(int posicion) { this.posicion = posicion; }
+    public String getDueño() { return dueño; }
+    public long getTiempoCreacion() { return tiempoCreacion; }
     
-    // Este método es vital, lo usaremos para mover el ticket de un estado a otro
-    public void setEstado(String nuevoEstado) { 
-        this.estado = nuevoEstado; 
+    public void iniciarEjecucion() {
+        this.tiempoEjecucion = System.currentTimeMillis();
+        this.estado = "EJECUTANDO";
     }
     
-    // Para imprimir la información fácilmente en la interfaz más adelante
+    public long getTiempoEjecucionTotal() {
+        if (tiempoEjecucion == 0) return 0;
+        return System.currentTimeMillis() - tiempoEjecucion;
+    }
+    
     @Override
     public String toString() {
-        return "Proceso " + id + " [" + tipoOperacion + " - " + estado + "]";
+        return "P" + id + " [" + tipoOperacion + "] " + 
+               (archivoObjetivo != null ? archivoObjetivo.getNombre() : "?") + 
+               " - " + dueño;
     }
 }
